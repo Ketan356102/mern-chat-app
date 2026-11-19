@@ -2,45 +2,28 @@ const asyncHandler = require("express-async-handler");
 const User = require("../models/userModel");
 const generateToken = require("../config/generateToken");
 
-//@description     Get or Search all users
-//@route           GET /api/user?search=
-//@access          Public
-const allUsers = asyncHandler(async (req, res) => {
-  const keyword = req.query.search
-    ? {
-        $or: [
-          { name: { $regex: req.query.search, $options: "i" } },
-          { email: { $regex: req.query.search, $options: "i" } },
-        ],
-      }
-    : {};
-
-  const users = await User.find(keyword).find({ _id: { $ne: req.user._id } });
-  res.send(users);
-});
-
-//@description     Register new user
-//@route           POST /api/user/
-//@access          Public
+//Sign Up
 const registerUser = asyncHandler(async (req, res) => {
   const { name, email, password, pic } = req.body;
 
   if (!name || !email || !password) {
     res.status(400);
-    throw new Error("Please Enter all the Feilds");
+    throw new Error("Please Enter all the Fields");
   }
 
-  const userExists = await User.findOne({ email });
-
-  if (userExists) {
+  const userExist = await User.findOne({ email });
+  if (userExist) {
     res.status(400);
     throw new Error("User already exists");
   }
 
+  const salt = await bcrypt.genSalt(10);
+  const hashedPassword = await bcrypt.hash(password, salt);
+
   const user = await User.create({
     name,
-    email,
-    password,
+    email: email.toLowerCase(),
+    password: hashedPassword,
     pic,
   });
 
@@ -49,37 +32,86 @@ const registerUser = asyncHandler(async (req, res) => {
       _id: user._id,
       name: user.name,
       email: user.email,
-      isAdmin: user.isAdmin,
       pic: user.pic,
       token: generateToken(user._id),
     });
   } else {
-    res.status(400);
-    throw new Error("User not found");
+    res.status(201);
+    throw new Error("Failed to Create the User");
   }
 });
 
-//@description     Auth the user
-//@route           POST /api/users/login
-//@access          Public
+// LOGIN
 const authUser = asyncHandler(async (req, res) => {
   const { email, password } = req.body;
 
+  if (!email || !password) {
+    res.status(400);
+    throw new Error("Enter all the fields");
+  }
+
   const user = await User.findOne({ email });
 
-  if (user && (await user.matchPassword(password))) {
-    res.json({
+  if (user && (await bcrypt.compare(password, user.password))) {
+    res.status(200).json({
       _id: user._id,
       name: user.name,
       email: user.email,
-      isAdmin: user.isAdmin,
       pic: user.pic,
-      token: generateToken(user._id),
+      token: generateToken(user._id), // JWT token
     });
   } else {
     res.status(401);
-    throw new Error("Invalid Email or Password");
+    throw new Error("Invalid email or password");
   }
 });
 
-module.exports = { allUsers, registerUser, authUser };
+//Google-Login
+
+const googleLogin = asyncHandler(async (req, res) => {
+  const { name, email, pic, id } = req.body;
+
+  console.log("Google Login Payload:", req.body);
+
+  if (!email || !id) {
+    res.status(400);
+    throw new Error("Invalid Google login data — email or ID missing");
+  }
+
+  let user = await User.findOne({ email: email.toLowerCase() });
+
+  if (!user) {
+    user = await User.create({
+      name,
+      email: email.toLowerCase(),
+      pic,
+      googleId: id,
+    });
+  }
+
+  res.status(200).json({
+    _id: user._id,
+    name: user.name,
+    email: user.email,
+    pic: user.pic,
+    token: generateToken(user._id),
+  });
+});
+
+//All Users:
+const allUsers = asyncHandler(async (req, res) => {
+  const searchKeyword = req.query.searchedUser || req.query.search;
+  const keyword = searchKeyword
+    ? {
+        $or: [
+          { name: { $regex: searchKeyword, $options: "i" } },
+          { email: { $regex: searchKeyword, $options: "i" } },
+        ],
+      }
+    : {};
+
+  const users = await User.find(keyword).find({ _id: { $ne: req.user._id } });
+  res.send(users);
+});
+
+module.exports = { allUsers, registerUser, authUser, googleLogin };

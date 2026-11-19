@@ -3,22 +3,32 @@ import { Box } from "@chakra-ui/react"
 import { ChatState } from "../Context/ChatProvider"
 import SingleChat from './SingleChat';
 
-const ChatBox = ({fetchAgain, setFetchAgain }) => {
+const ChatBox = ({ fetchAgain, setFetchAgain }) => {
   const { selectedChat } = ChatState();
   return (
     <Box
-    display={{ base: selectedChat ? "flex" : "none", md: "flex" }}
-    alignItems="center"
-    flexDir="column"
-    p={3}
-    bg="white"
-    w={{ base: "100%", md: "68%" }}
-    borderRadius="lg"
-    borderWidth="1px"
+      display={{ base: selectedChat ? "flex" : "none", md: "flex" }}
+      alignItems="center"
+      justifyContent="center"
+      w={{ base: "100%", md: "72%" }}
+      h="100%"
+      bgGradient="linear(to-b, white, gray.50)"
+      borderRadius="2xl"
+      ml={{ base: 0, md: 2 }}
+      p={{ base: 3, md: 6 }}
+      boxShadow="lg"
+      border="2px solid"
+      borderColor="gray.200"
+      transition="all 0.3s ease"
+      _hover={{
+        boxShadow: "xl",
+        transform: "scale(1.01)",
+      }}
+      overflowY="auto"
     >
       <SingleChat fetchAgain={fetchAgain} setFetchAgain={setFetchAgain} />
     </Box>
   );
 };
 
-export default ChatBox
+export default ChatBox;

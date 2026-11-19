@@ -6,8 +6,7 @@
   "author": "Suthar Ketan Shantilal",
   "type": "commonjs",
   "main": "index.js",
-
-   "engines": {
+  "engines": {
     "node": "20.x"
   },
   "scripts": {

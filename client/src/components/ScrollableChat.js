@@ -37,7 +37,7 @@ const ScrollableChat = ({ messages }) => {
     return () => document.head.removeChild(style);
   }, []);
   return (
-    <ScrollableFeed className="scrollable-chat">
+     <ScrollableFeed className="scrollable-chat">
       {messages &&
         messages.map((m, i) => {
           const isUserMessage = m.sender._id === user._id;
